@@ -24,9 +24,9 @@ This is a geospatial flood risk analysis toolkit for urban environments, specifi
    - `MemoryEfficientRasterClipper`: Large raster clipping without memory overload
    - Multiple clipping strategies (window-based, GDAL command-line, chunk processing)
 
-4. **`flood_analysis.py`** - Advanced GRASS GIS integration:
-   - `NYCFloodAnalysis`: Watershed analysis, flow accumulation, risk scoring
-   - Requires GRASS GIS environment setup
+4. **`flood_analysis.py`** - Pure Python flood risk analysis:
+   - `PythonFloodAnalysis`: Watershed analysis, flow accumulation, risk scoring using numpy/scipy
+   - No external GIS dependencies required
 
 5. **`nyc_data_download_guide.py`** - Data acquisition automation:
    - `NYCDataDownloader`: Automated download from NYC Open Data portal
@@ -113,8 +113,8 @@ Core geospatial stack:
 - `numpy`: Numerical computations
 - `shapely`: Geometric operations
 
-Optional advanced analysis:
-- `grass.script`: GRASS GIS integration (for `flood_analysis.py`)
+Additional libraries:
+- `scipy`: Scientific computing for flow accumulation and watershed analysis
 - `requests`: Data download automation
 
 ## Common Development Patterns
