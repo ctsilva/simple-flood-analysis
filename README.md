@@ -9,7 +9,7 @@ A geospatial flood risk analysis toolkit for urban environments, specifically de
 - **Geospatial Data Processing**: Automated clipping, reprojection, and coordinate system handling
 - **Memory-Efficient Processing**: Handle large raster datasets without memory overload
 - **Automated Data Download**: Integration with NYC Open Data portal
-- **Advanced Flood Modeling**: GRASS GIS integration for watershed analysis
+- **Advanced Flood Modeling**: Pure Python watershed analysis and flow accumulation
 
 ## Quick Start
 
@@ -50,7 +50,7 @@ python nyc_data_download_guide2.py
 - **`elevation_data_analyzer.py`** - Core DEM analysis engine with elevation statistics and road network flood risk assessment
 - **`nyc_data_clipping.py`** - Geospatial data clipping toolkit with multiple clipping methods
 - **`raster_clipping_methods.py`** - Memory-efficient raster processing for large datasets
-- **`flood_analysis.py`** - Advanced GRASS GIS integration for watershed analysis
+- **`flood_analysis.py`** - Pure Python flood risk analysis with watershed modeling
 - **`nyc_data_download_guide2.py`** - Automated data acquisition from NYC Open Data
 
 ### Key Classes
@@ -59,7 +59,7 @@ python nyc_data_download_guide2.py
 - `RoadNetworkAnalyzer`: Road network processing and flood risk assessment
 - `GeospatialDataClipper`: Multiple clipping methods with automatic reprojection
 - `MemoryEfficientRasterClipper`: Large raster processing strategies
-- `NYCFloodAnalysis`: Watershed analysis and flow accumulation
+- `PythonFloodAnalysis`: Pure Python watershed analysis and flow accumulation
 - `NYCDataDownloader`: Automated dataset downloads
 
 ## Installation
@@ -82,8 +82,8 @@ pip install -r requirements.txt
 - `numpy` - Numerical computations
 - `shapely` - Geometric operations
 
-### Optional for Advanced Analysis
-- `grass.script` - GRASS GIS integration
+### Additional Libraries
+- `scipy` - Scientific computing for watershed analysis
 - `requests` - Data download automation
 
 ## Data Requirements
@@ -117,5 +117,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Acknowledgments
 
 - NYC Open Data portal for providing comprehensive geospatial datasets
-- GRASS GIS community for advanced geospatial analysis capabilities
+- SciPy community for scientific computing algorithms
 - Python geospatial ecosystem (GDAL, Rasterio, GeoPandas)
