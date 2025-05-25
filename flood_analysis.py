@@ -6,22 +6,13 @@ water height, and watershed analysis using pure Python libraries.
 """
 
 from __future__ import annotations
-from typing import Optional, Union, List, Dict, Any, Tuple
+from typing import Optional, Union, Dict, Any
 
-import os
 import numpy as np
-import pandas as pd
 import geopandas as gpd
 import rasterio
-from rasterio.mask import mask
-from rasterio.features import shapes, rasterize
-from rasterio.transform import from_bounds
-from rasterio.windows import Window
 from scipy import ndimage
-from scipy.spatial.distance import cdist
-from shapely.geometry import Point, LineString, Polygon, box
 from pathlib import Path
-import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -178,7 +169,6 @@ class PythonFloodAnalysis:
         marker[1:-1, 1:-1] = np.inf
         
         # Morphological reconstruction
-        filled = dem.copy()
         while True:
             marker_old = marker.copy()
             marker = np.minimum(marker, dem)

@@ -5,19 +5,16 @@ Clip large raster files without loading entire dataset into memory
 """
 
 from __future__ import annotations
-from typing import Tuple, Optional, Union, Any, Dict
+from typing import Tuple, Optional, Union, Dict
 
 import rasterio
 from rasterio.windows import Window, from_bounds
 from rasterio.mask import mask
 from rasterio.crs import CRS
 from rasterio.transform import Affine
-import numpy as np
-import geopandas as gpd
-from shapely.geometry import box, Polygon
+from shapely.geometry import Polygon
 from pathlib import Path
 import subprocess
-import os
 
 class MemoryEfficientRasterClipper:
     def __init__(self, raster_path: Union[str, Path]) -> None:
@@ -158,7 +155,7 @@ class MemoryEfficientRasterClipper:
         print(f"GDAL command: {' '.join(cmd)}")
         
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            subprocess.run(cmd, capture_output=True, text=True, check=True)
             print("✅ GDAL clipping successful!")
             print(f"   Output: {output_path}")
             
