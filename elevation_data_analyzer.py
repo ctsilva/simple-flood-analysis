@@ -236,7 +236,7 @@ class ElevationDataAnalyzer:
             'range': np.max(self.valid_data) - np.min(self.valid_data)
         }
         
-        print(f"Valid Pixels: {stats['count']:,} ({stats['count']/(self.src_info['width']*self.src_info['height'])*100:.1f}%)")
+        print(f"Valid Pixels: {int(stats['count']):,} ({stats['count']/(self.src_info['width']*self.src_info['height'])*100:.1f}%)")
         print(f"Minimum Elevation: {stats['min']:.2f}")
         print(f"Maximum Elevation: {stats['max']:.2f}")
         print(f"Mean Elevation: {stats['mean']:.2f}")
@@ -259,9 +259,9 @@ class ElevationDataAnalyzer:
         at_sea_level = np.sum((self.valid_data >= 0) & (self.valid_data <= 1))
         low_elevation = np.sum((self.valid_data > 1) & (self.valid_data <= 10))
         
-        print(f"Below Sea Level (<0): {below_sea_level:,} pixels ({below_sea_level/len(self.valid_data)*100:.1f}%)")
-        print(f"At Sea Level (0-1): {at_sea_level:,} pixels ({at_sea_level/len(self.valid_data)*100:.1f}%)")
-        print(f"Low Elevation (1-10): {low_elevation:,} pixels ({low_elevation/len(self.valid_data)*100:.1f}%)")
+        print(f"Below Sea Level (<0): {int(below_sea_level):,} pixels ({below_sea_level/len(self.valid_data)*100:.1f}%)")
+        print(f"At Sea Level (0-1): {int(at_sea_level):,} pixels ({at_sea_level/len(self.valid_data)*100:.1f}%)")
+        print(f"Low Elevation (1-10): {int(low_elevation):,} pixels ({low_elevation/len(self.valid_data)*100:.1f}%)")
         
         return stats
     
@@ -532,10 +532,10 @@ Legend:
         print()
         
         for water_level in validated_levels:
-            flooded_pixels = np.sum(self.valid_data <= water_level)
+            flooded_pixels = int(np.sum(self.valid_data <= water_level))
             percentage = flooded_pixels / total_pixels * 100
             
-            print(f"Water Level {water_level:2d} ft: {flooded_pixels:>8,} pixels ({percentage:>5.1f}% of area)")
+            print(f"Water Level {water_level:4.1f} ft: {flooded_pixels:>8,} pixels ({percentage:>5.1f}% of area)")
         
         # Calculate area if we know the coordinate system
         pixel_area = abs(self.src_info['res'][0] * self.src_info['res'][1])
@@ -563,7 +563,7 @@ Legend:
         if self.src_info['nodata'] is not None:
             nodata_count = np.sum(self.elevation_data == self.src_info['nodata'])
             nodata_percent = nodata_count / (self.src_info['width'] * self.src_info['height']) * 100
-            print(f"No-data pixels: {nodata_count:,} ({nodata_percent:.1f}%)")
+            print(f"No-data pixels: {int(nodata_count):,} ({nodata_percent:.1f}%)")
         
         # Check for extreme values
         valid_mask = self.elevation_data != self.src_info['nodata'] if self.src_info['nodata'] is not None else np.ones_like(self.elevation_data, dtype=bool)
@@ -578,8 +578,8 @@ Legend:
         high_outliers = np.sum(valid_elevations > (mean_elev + outlier_threshold))
         
         print(f"Potential outliers:")
-        print(f"  Extremely low: {low_outliers:,} pixels (< {mean_elev - outlier_threshold:.1f} ft)")
-        print(f"  Extremely high: {high_outliers:,} pixels (> {mean_elev + outlier_threshold:.1f} ft)")
+        print(f"  Extremely low: {int(low_outliers):,} pixels (< {mean_elev - outlier_threshold:.1f} ft)")
+        print(f"  Extremely high: {int(high_outliers):,} pixels (> {mean_elev + outlier_threshold:.1f} ft)")
         
         # Check data type and precision
         print(f"\nData precision:")
@@ -675,8 +675,8 @@ def quick_elevation_summary(dem_path: Union[str, Path]) -> None:
             print(f"Valid pixels: {len(valid_data):,}")
             print(f"Elevation range: {valid_data.min():.1f} to {valid_data.max():.1f}")
             print(f"Mean elevation: {valid_data.mean():.1f}")
-            print(f"Below sea level: {np.sum(valid_data < 0):,} pixels")
-            print(f"Low elevation (0-10 ft): {np.sum((valid_data >= 0) & (valid_data <= 10)):,} pixels")
+            print(f"Below sea level: {int(np.sum(valid_data < 0)):,} pixels")
+            print(f"Low elevation (0-10 ft): {int(np.sum((valid_data >= 0) & (valid_data <= 10))):,} pixels")
             
     except Exception as e:
         print(f"Error: {e}")
