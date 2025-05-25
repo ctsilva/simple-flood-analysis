@@ -29,6 +29,9 @@ Author: Geospatial Clipping Tool
 Version: 2.0
 """
 
+from __future__ import annotations
+from typing import Tuple, Optional, Union, List, Dict, Any
+
 import geopandas as gpd
 import pandas as pd
 from shapely.geometry import box, Point, Polygon
@@ -51,24 +54,24 @@ class GeospatialDataClipper:
         full_data (GeoDataFrame): Complete loaded shapefile data
     """
     
-    def __init__(self, shapefile_path):
+    def __init__(self, shapefile_path: Union[str, Path]) -> None:
         """Initialize the clipper with a shapefile.
         
         Args:
-            shapefile_path (str): Path to the input shapefile
+            shapefile_path: Path to the input shapefile
             
         Raises:
             FileNotFoundError: If the shapefile doesn't exist
             ValueError: If the shapefile cannot be read
         """
-        self.shapefile_path = Path(shapefile_path)
+        self.shapefile_path: Path = Path(shapefile_path)
         print(f"Loading shapefile data from: {self.shapefile_path.name}...")
-        self.full_data = gpd.read_file(shapefile_path)
+        self.full_data: gpd.GeoDataFrame = gpd.read_file(shapefile_path)
         print(f"Loaded {len(self.full_data):,} features")
         print(f"CRS: {self.full_data.crs}")
         print(f"Bounds: {self.full_data.total_bounds}")
         
-    def clip_by_bounding_box(self, bounds):
+    def clip_by_bounding_box(self, bounds: Tuple[float, float, float, float]) -> gpd.GeoDataFrame:
         """Clip shapefile using rectangular bounding box coordinates.
         
         Creates a rectangular bounding box and clips all features that
@@ -76,10 +79,10 @@ class GeospatialDataClipper:
         for rectangular areas.
         
         Args:
-            bounds (tuple): Bounding box as (min_x, min_y, max_x, max_y)
+            bounds: Bounding box as (min_x, min_y, max_x, max_y)
             
         Returns:
-            GeoDataFrame: Clipped shapefile data
+            Clipped shapefile data
         """
         print("\n🔲 BOUNDING BOX CLIPPING")
         print("-" * 30)
@@ -95,7 +98,7 @@ class GeospatialDataClipper:
         
         return clipped
     
-    def clip_by_coordinates(self, lat_range, lon_range):
+    def clip_by_coordinates(self, lat_range: Tuple[float, float], lon_range: Tuple[float, float]) -> gpd.GeoDataFrame:
         """Clip shapefile using latitude and longitude coordinate ranges.
         
         Converts data to WGS84 (EPSG:4326) if needed and clips to the
@@ -103,11 +106,11 @@ class GeospatialDataClipper:
         with GPS coordinates or web mapping applications.
         
         Args:
-            lat_range (tuple): Latitude range as (min_lat, max_lat)
-            lon_range (tuple): Longitude range as (min_lon, max_lon)
+            lat_range: Latitude range as (min_lat, max_lat)
+            lon_range: Longitude range as (min_lon, max_lon)
             
         Returns:
-            GeoDataFrame: Clipped shapefile data in WGS84 coordinates
+            Clipped shapefile data in WGS84 coordinates
         """
         print("\n🌍 GEOGRAPHIC COORDINATE CLIPPING")
         print("-" * 35)
@@ -133,7 +136,7 @@ class GeospatialDataClipper:
         
         return clipped
     
-    def clip_by_attribute_names(self, keywords):
+    def clip_by_attribute_names(self, keywords: List[str]) -> Optional[gpd.GeoDataFrame]:
         """Clip shapefile by filtering attribute names/values.
         
         Searches through text attributes (like street names, neighborhood names)
@@ -141,11 +144,10 @@ class GeospatialDataClipper:
         Useful for extracting features related to specific areas or categories.
         
         Args:
-            keywords (list): List of strings to search for in attribute fields
+            keywords: List of strings to search for in attribute fields
             
         Returns:
-            GeoDataFrame: Filtered shapefile data containing matching features
-            None: If no name columns are found
+            Filtered shapefile data containing matching features, or None if no name columns found
         """
         print("\n🏷️ ATTRIBUTE NAME FILTERING")
         print("-" * 30)
@@ -180,7 +182,7 @@ class GeospatialDataClipper:
         
         return filtered
     
-    def clip_by_custom_polygon(self, polygon_coords):
+    def clip_by_custom_polygon(self, polygon_coords: List[Tuple[float, float]]) -> gpd.GeoDataFrame:
         """Clip shapefile using a custom polygon boundary.
         
         Creates a polygon from the provided coordinates and clips all features
@@ -188,11 +190,10 @@ class GeospatialDataClipper:
         that cannot be represented by simple bounding boxes.
         
         Args:
-            polygon_coords (list): List of (x, y) coordinate tuples defining 
-                                 the polygon boundary
+            polygon_coords: List of (x, y) coordinate tuples defining the polygon boundary
                                  
         Returns:
-            GeoDataFrame: Clipped shapefile data
+            Clipped shapefile data
         """
         print("\n🔶 CUSTOM POLYGON CLIPPING")
         print("-" * 30)
@@ -208,7 +209,8 @@ class GeospatialDataClipper:
         
         return clipped
     
-    def clip_by_administrative_boundary(self, boundary_file=None, boundary_name="Greenwich Village"):
+    def clip_by_administrative_boundary(self, boundary_file: Optional[str] = None, 
+                                       boundary_name: str = "Greenwich Village") -> Optional[gpd.GeoDataFrame]:
         """Clip shapefile using administrative boundary data.
         
         Loads administrative boundary shapefiles (like neighborhood or district
@@ -216,12 +218,11 @@ class GeospatialDataClipper:
         Useful for clipping to official administrative regions.
         
         Args:
-            boundary_file (str): Path to boundary shapefile
-            boundary_name (str): Name of the boundary to search for
+            boundary_file: Path to boundary shapefile
+            boundary_name: Name of the boundary to search for
             
         Returns:
-            GeoDataFrame: Clipped shapefile data
-            None: If boundary file not provided or boundary not found
+            Clipped shapefile data, or None if boundary file not provided or boundary not found
         """
         print("\n🏛️ ADMINISTRATIVE BOUNDARY CLIPPING")
         print("-" * 40)
@@ -245,16 +246,17 @@ class GeospatialDataClipper:
         print("No boundary file provided or boundary not found")
         return None
     
-    def visualize_clipping_result(self, original_data, clipped_data, title="Clipped Data"):
+    def visualize_clipping_result(self, original_data: gpd.GeoDataFrame, 
+                                 clipped_data: gpd.GeoDataFrame, title: str = "Clipped Data") -> None:
         """Create before/after visualization of clipping results.
         
         Generates a side-by-side comparison showing the original dataset
         and the clipped result. Samples large datasets for performance.
         
         Args:
-            original_data (GeoDataFrame): Original unclipped data
-            clipped_data (GeoDataFrame): Clipped result data
-            title (str): Title for the clipped data plot
+            original_data: Original unclipped data
+            clipped_data: Clipped result data
+            title: Title for the clipped data plot
         """
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 7))
         
@@ -277,8 +279,12 @@ class GeospatialDataClipper:
         plt.tight_layout()
         plt.show()
     
-    def get_greenwich_village_bounds(self):
-        """Get approximate Greenwich Village bounding box"""
+    def get_greenwich_village_bounds(self) -> Dict[str, Any]:
+        """Get approximate Greenwich Village bounding box.
+        
+        Returns:
+            Dictionary containing bounds in different coordinate systems
+        """
         # Greenwich Village approximate bounds (in various coordinate systems)
         
         bounds_options = {
@@ -356,14 +362,14 @@ class GeospatialDataClipper:
             print(f"Error clipping to DEM bounds: {e}")
             return None
 
-def demonstrate_all_clipping_methods():
+def demonstrate_all_clipping_methods() -> Optional[Tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]]:
     """Demonstrate all available clipping methods with examples.
     
     Shows how to use each clipping method with sample data and parameters.
     Useful for learning the different approaches and their use cases.
     
     Returns:
-        tuple: (bbox_clipped_data, name_filtered_data) for further analysis
+        Tuple of (bbox_clipped_data, name_filtered_data) for further analysis, or None if failed
     """
     # Initialize (replace with your actual shapefile path)
     shapefile_path = "nyc_centerline.shp"  # Replace with actual path

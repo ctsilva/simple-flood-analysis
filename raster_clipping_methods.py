@@ -4,9 +4,14 @@ Memory-Efficient Raster Clipping Methods
 Clip large raster files without loading entire dataset into memory
 """
 
+from __future__ import annotations
+from typing import Tuple, Optional, Union, Any, Dict
+
 import rasterio
 from rasterio.windows import Window, from_bounds
 from rasterio.mask import mask
+from rasterio.crs import CRS
+from rasterio.transform import Affine
 import numpy as np
 import geopandas as gpd
 from shapely.geometry import box, Polygon
@@ -15,13 +20,24 @@ import subprocess
 import os
 
 class MemoryEfficientRasterClipper:
-    def __init__(self, raster_path):
-        """Initialize with raster file path"""
-        self.raster_path = Path(raster_path)
+    def __init__(self, raster_path: Union[str, Path]) -> None:
+        """Initialize with raster file path.
+        
+        Args:
+            raster_path: Path to the raster file
+        """
+        self.raster_path: Path = Path(raster_path)
+        self.width: int = 0
+        self.height: int = 0
+        self.crs: Optional[CRS] = None
+        self.transform: Optional[Affine] = None
+        self.bounds: Optional[rasterio.coords.BoundingBox] = None
+        self.nodata: Optional[float] = None
+        self.dtype: str = ''
         self.get_raster_info()
     
-    def get_raster_info(self):
-        """Get basic raster information without loading data"""
+    def get_raster_info(self) -> None:
+        """Get basic raster information without loading data."""
         print(f"Analyzing raster: {self.raster_path.name}")
         print("=" * 50)
         
@@ -44,10 +60,17 @@ class MemoryEfficientRasterClipper:
             print(f"CRS: {self.crs}")
             print(f"Bounds: {self.bounds}")
     
-    def method1_window_clipping(self, bounds, output_path):
+    def method1_window_clipping(self, bounds: Tuple[float, float, float, float], 
+                               output_path: Union[str, Path]) -> Optional[str]:
         """
         Method 1: Window-based clipping (Most Memory Efficient)
-        bounds: (min_x, min_y, max_x, max_y) in same CRS as raster
+        
+        Args:
+            bounds: (min_x, min_y, max_x, max_y) in same CRS as raster
+            output_path: Path for output file
+            
+        Returns:
+            Path to output file if successful, None otherwise
         """
         print(f"\n🔪 METHOD 1: WINDOW CLIPPING")
         print("-" * 30)
@@ -107,10 +130,18 @@ class MemoryEfficientRasterClipper:
             
             return output_path
     
-    def method2_gdal_clip(self, bounds, output_path):
+    def method2_gdal_clip(self, bounds: Tuple[float, float, float, float], 
+                         output_path: Union[str, Path]) -> Optional[str]:
         """
         Method 2: GDAL command-line clipping (Most Memory Efficient)
         Uses GDAL translate command - no Python memory usage!
+        
+        Args:
+            bounds: (min_x, min_y, max_x, max_y) in same CRS as raster
+            output_path: Path for output file
+            
+        Returns:
+            Path to output file if successful, None otherwise
         """
         print(f"\n🔪 METHOD 2: GDAL COMMAND-LINE CLIPPING")
         print("-" * 40)
@@ -153,9 +184,18 @@ class MemoryEfficientRasterClipper:
         
         return None
     
-    def method3_chunk_processing(self, bounds, output_path, chunk_size=1000):
+    def method3_chunk_processing(self, bounds: Tuple[float, float, float, float], 
+                               output_path: Union[str, Path], chunk_size: int = 1000) -> Optional[str]:
         """
         Method 3: Process in chunks (For very large clips)
+        
+        Args:
+            bounds: (min_x, min_y, max_x, max_y) in same CRS as raster
+            output_path: Path for output file
+            chunk_size: Size of chunks to process
+            
+        Returns:
+            Path to output file if successful, None otherwise
         """
         print(f"\n🔪 METHOD 3: CHUNK PROCESSING")
         print("-" * 30)
@@ -210,10 +250,17 @@ class MemoryEfficientRasterClipper:
                 print(f"\n✅ Chunk processing complete: {output_path}")
                 return output_path
     
-    def method4_polygon_mask(self, polygon_coords, output_path):
+    def method4_polygon_mask(self, polygon_coords: list[Tuple[float, float]], 
+                           output_path: Union[str, Path]) -> Optional[str]:
         """
         Method 4: Clip by polygon using rasterio mask (moderate memory)
-        polygon_coords: list of (x, y) coordinate tuples
+        
+        Args:
+            polygon_coords: List of (x, y) coordinate tuples
+            output_path: Path for output file
+            
+        Returns:
+            Path to output file if successful, None otherwise
         """
         print(f"\n🔪 METHOD 4: POLYGON MASK CLIPPING")
         print("-" * 35)
@@ -248,8 +295,12 @@ class MemoryEfficientRasterClipper:
                 print("💡 Try method 1 or 2 with smaller bounds")
                 return None
 
-def get_greenwich_village_bounds():
-    """Get Greenwich Village bounds in different coordinate systems"""
+def get_greenwich_village_bounds() -> Dict[str, Tuple[float, float, float, float]]:
+    """Get Greenwich Village bounds in different coordinate systems.
+    
+    Returns:
+        Dictionary mapping coordinate system names to bounds tuples
+    """
     bounds_options = {
         'epsg_4326': (-74.008, 40.728, -73.995, 40.738),  # WGS84
         'epsg_2263': (983000, 199000, 990000, 206000),     # NY State Plane (feet)

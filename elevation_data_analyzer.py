@@ -32,16 +32,21 @@ Author: Elevation Analysis Tool
 Version: 1.0
 """
 
+from __future__ import annotations
+from typing import Dict, List, Tuple, Optional, Union, Any
+
 import rasterio
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.figure
 import seaborn as sns
 from pathlib import Path
 import pandas as pd
 from collections import Counter
 import geopandas as gpd
 from rasterio.features import rasterize
-from rasterio.transform import from_bounds
+from rasterio.transform import from_bounds, Affine
+from rasterio.crs import CRS
 from shapely.geometry import Point, LineString
 import warnings
 warnings.filterwarnings('ignore')
@@ -60,29 +65,29 @@ class ElevationDataAnalyzer:
         src_info (dict): Metadata about the raster source (CRS, bounds, etc.)
         valid_data (numpy.ndarray): 1D array of valid elevation values (no-data removed)
     """
-    def __init__(self, dem_path):
+    def __init__(self, dem_path: Union[str, Path]) -> None:
         """Initialize the analyzer with a DEM file path.
         
         Args:
-            dem_path (str): Path to the DEM raster file
+            dem_path: Path to the DEM raster file
             
         Raises:
             FileNotFoundError: If the DEM file doesn't exist
         """
-        self.dem_path = Path(dem_path)
-        self.elevation_data = None
-        self.src_info = None
-        self.valid_data = None
+        self.dem_path: Path = Path(dem_path)
+        self.elevation_data: Optional[np.ndarray] = None
+        self.src_info: Optional[Dict[str, Any]] = None
+        self.valid_data: Optional[np.ndarray] = None
         self.load_data()
     
-    def load_data(self):
+    def load_data(self) -> bool:
         """Load the DEM data and extract metadata.
         
         Reads the elevation raster and stores both the data array and 
         metadata including CRS, bounds, resolution, and data type.
         
         Returns:
-            bool: True if data loaded successfully, False otherwise
+            True if data loaded successfully, False otherwise
         """
         print(f"Loading elevation data from: {self.dem_path.name}")
         print("=" * 60)
@@ -114,7 +119,7 @@ class ElevationDataAnalyzer:
         
         return True
     
-    def basic_info(self):
+    def basic_info(self) -> None:
         """Display comprehensive information about the elevation dataset.
         
         Prints formatted information including:
@@ -171,7 +176,7 @@ class ElevationDataAnalyzer:
             area_sq_km = area_sq_m / (1000 * 1000)
             print(f"Area: {area_sq_km:.1f} square kilometers")
     
-    def elevation_statistics(self):
+    def elevation_statistics(self) -> Optional[Dict[str, float]]:
         """Calculate comprehensive elevation statistics.
         
         Computes descriptive statistics, percentiles, and sea level analysis
@@ -179,7 +184,7 @@ class ElevationDataAnalyzer:
         processed valid data as a class member for use by other methods.
         
         Returns:
-            dict: Dictionary containing statistical measures
+            Dictionary containing statistical measures, or None if no valid data
         """
         print("\n🏔️ ELEVATION STATISTICS")
         print("-" * 30)
@@ -238,7 +243,7 @@ class ElevationDataAnalyzer:
         
         return stats
     
-    def elevation_distribution(self):
+    def elevation_distribution(self) -> Tuple[List[int], List[str]]:
         """Analyze elevation distribution across predefined bins.
         
         Categorizes elevation data into meaningful elevation ranges
@@ -246,7 +251,7 @@ class ElevationDataAnalyzer:
         Uses the class's valid_data computed by elevation_statistics().
             
         Returns:
-            tuple: (bin_counts, bin_labels) for further analysis
+            Tuple of (bin_counts, bin_labels) for further analysis
         """
         print(f"\n📊 ELEVATION DISTRIBUTION ANALYSIS")
         print("-" * 35)
@@ -271,7 +276,7 @@ class ElevationDataAnalyzer:
         
         return bin_counts, bin_labels
     
-    def create_visualizations(self, sample_size=50000):
+    def create_visualizations(self, sample_size: int = 50000) -> None:
         """Generate visualizations of elevation data.
         
         Creates two key visualizations:
@@ -281,8 +286,8 @@ class ElevationDataAnalyzer:
         Uses the class's valid_data computed by elevation_statistics().
         
         Args:
-            sample_size (int): Maximum number of points to use for histogram 
-                             (for performance with large datasets)
+            sample_size: Maximum number of points to use for histogram 
+                        (for performance with large datasets)
         """
         print(f"\n📈 CREATING VISUALIZATIONS")
         print("-" * 30)
@@ -329,7 +334,7 @@ class ElevationDataAnalyzer:
         plt.tight_layout()
         plt.show()
     
-    def visualize_flood_risk_map(self, flood_level=10, figsize=(12, 8)):
+    def visualize_flood_risk_map(self, flood_level: float = 10, figsize: Tuple[int, int] = (12, 8)) -> Optional[matplotlib.figure.Figure]:
         """Visualize elevation map with flood risk zones overlay.
         
         Creates a map showing the elevation data with flood risk zones highlighted
@@ -337,8 +342,11 @@ class ElevationDataAnalyzer:
         are colored to indicate flood risk.
         
         Args:
-            flood_level (float): Water level threshold in feet for flood analysis
-            figsize (tuple): Figure size for the plot
+            flood_level: Water level threshold in feet for flood analysis
+            figsize: Figure size for the plot
+            
+        Returns:
+            The matplotlib Figure object, or None if no data available
         """
         if self.elevation_data is None:
             print("❌ No elevation data available!")
@@ -452,7 +460,7 @@ Legend:
         
         return fig
     
-    def flood_risk_analysis(self, water_levels=[5, 10, 15, 20]):
+    def flood_risk_analysis(self, water_levels: List[float] = [5, 10, 15, 20]) -> None:
         """Perform flood risk assessment at various water level scenarios.
         
         Calculates the number and percentage of pixels that would be flooded
@@ -462,7 +470,7 @@ Legend:
         Uses the class's valid_data computed by elevation_statistics().
         
         Args:
-            water_levels (list): List of water level thresholds (in feet) to analyze
+            water_levels: List of water level thresholds (in feet) to analyze
         """
         print(f"\n🌊 FLOOD RISK ANALYSIS")
         print("-" * 25)
@@ -489,7 +497,7 @@ Legend:
             print(f"\nPixel area: {pixel_area:.1f} square meters")
             print(f"Each 1% of area ≈ {total_pixels * pixel_area / 100 / 1000000:.2f} square kilometers")
     
-    def data_quality_check(self):
+    def data_quality_check(self) -> None:
         """Perform comprehensive data quality assessment.
         
         Checks for:
@@ -546,7 +554,7 @@ Legend:
             else:
                 print(f"  Float data but appears to be whole numbers")
     
-    def run_complete_analysis(self):
+    def run_complete_analysis(self) -> None:
         """Execute the full analysis workflow.
         
         Runs all analysis methods in sequence:
@@ -590,14 +598,14 @@ Legend:
         print(f"📁 Data file: {self.dem_path}")
         print(f"📊 {len(self.valid_data):,} valid elevation points analyzed")
 
-def quick_elevation_summary(dem_path):
+def quick_elevation_summary(dem_path: Union[str, Path]) -> None:
     """Generate a quick summary of elevation data without full analysis.
     
     Provides essential statistics including elevation range, mean,
     and basic flood risk indicators without creating visualizations.
     
     Args:
-        dem_path (str): Path to the DEM file
+        dem_path: Path to the DEM file
     """
     print("QUICK ELEVATION SUMMARY")
     print("=" * 30)
@@ -637,29 +645,29 @@ class RoadNetworkAnalyzer:
         crs (CRS): Coordinate reference system of the road network
     """
     
-    def __init__(self, shapefile_path):
+    def __init__(self, shapefile_path: Union[str, Path]) -> None:
         """Initialize the road network analyzer.
         
         Args:
-            shapefile_path (str): Path to the road network shapefile
+            shapefile_path: Path to the road network shapefile
             
         Raises:
             FileNotFoundError: If the shapefile doesn't exist
             ValueError: If the shapefile cannot be read
         """
-        self.shapefile_path = Path(shapefile_path)
-        self.roads_gdf = None
-        self.crs = None
+        self.shapefile_path: Path = Path(shapefile_path)
+        self.roads_gdf: Optional[gpd.GeoDataFrame] = None
+        self.crs: Optional[CRS] = None
         self.load_road_network()
     
-    def load_road_network(self):
+    def load_road_network(self) -> bool:
         """Load the road network from shapefile.
         
         Reads the shapefile using GeoPandas and stores the road network
         data along with coordinate reference system information.
         
         Returns:
-            bool: True if data loaded successfully, False otherwise
+            True if data loaded successfully, False otherwise
         """
         print(f"Loading road network from: {self.shapefile_path.name}")
         print("=" * 50)
@@ -679,7 +687,7 @@ class RoadNetworkAnalyzer:
             print(f"❌ Error loading road network: {e}")
             return False
     
-    def basic_road_info(self):
+    def basic_road_info(self) -> None:
         """Display basic information about the road network.
         
         Prints comprehensive information about the road dataset including:
@@ -723,17 +731,17 @@ class RoadNetworkAnalyzer:
                 non_null = self.roads_gdf[col].notna().sum()
                 print(f"  {col}: {dtype} ({non_null:,}/{len(self.roads_gdf):,} non-null)")
     
-    def extract_road_elevations(self, dem_analyzer):
+    def extract_road_elevations(self, dem_analyzer: ElevationDataAnalyzer) -> Optional[gpd.GeoDataFrame]:
         """Extract elevation values for road segments from DEM data.
         
         Samples elevation values along road segments and calculates
         statistics for each road segment.
         
         Args:
-            dem_analyzer (ElevationDataAnalyzer): Initialized DEM analyzer
+            dem_analyzer: Initialized DEM analyzer
             
         Returns:
-            GeoDataFrame: Road network with added elevation statistics
+            Road network with added elevation statistics, or None if extraction fails
         """
         if self.roads_gdf is None or dem_analyzer.elevation_data is None:
             print("❌ Missing road network or elevation data!")
@@ -789,18 +797,20 @@ class RoadNetworkAnalyzer:
         
         return roads_reproj
     
-    def _sample_elevation_along_line(self, line_geom, elevation_data, transform, nodata, sample_distance=10):
+    def _sample_elevation_along_line(self, line_geom: LineString, elevation_data: np.ndarray, 
+                                   transform: Affine, nodata: Optional[float], 
+                                   sample_distance: float = 10) -> List[float]:
         """Sample elevation values along a line geometry.
         
         Args:
-            line_geom (LineString): Road segment geometry
-            elevation_data (numpy.ndarray): DEM elevation array
-            transform (Affine): Raster transform
-            nodata (float): No-data value
-            sample_distance (float): Distance between samples in map units
+            line_geom: Road segment geometry
+            elevation_data: DEM elevation array
+            transform: Raster transform
+            nodata: No-data value
+            sample_distance: Distance between samples in map units
             
         Returns:
-            list: List of elevation values along the line
+            List of elevation values along the line
         """
         if not isinstance(line_geom, LineString):
             return []
@@ -835,15 +845,16 @@ class RoadNetworkAnalyzer:
         
         return elevations
     
-    def assess_flood_risk(self, roads_with_elevations, flood_levels=[5, 10, 15, 20]):
+    def assess_flood_risk(self, roads_with_elevations: gpd.GeoDataFrame, 
+                         flood_levels: List[float] = [5, 10, 15, 20]) -> Optional[gpd.GeoDataFrame]:
         """Assess flood risk for road segments at different water levels.
         
         Args:
-            roads_with_elevations (GeoDataFrame): Roads with elevation data
-            flood_levels (list): Water level thresholds for flood analysis
+            roads_with_elevations: Roads with elevation data
+            flood_levels: Water level thresholds for flood analysis
             
         Returns:
-            GeoDataFrame: Roads with flood risk classifications
+            Roads with flood risk classifications, or None if assessment fails
         """
         if roads_with_elevations is None:
             print("❌ No road elevation data available!")
@@ -886,13 +897,14 @@ class RoadNetworkAnalyzer:
         
         return roads_risk
     
-    def visualize_road_flood_risk(self, roads_with_risk, flood_level=10, figsize=(12, 8)):
+    def visualize_road_flood_risk(self, roads_with_risk: gpd.GeoDataFrame, 
+                                 flood_level: int = 10, figsize: Tuple[int, int] = (12, 8)) -> None:
         """Visualize road flood risk on a map.
         
         Args:
-            roads_with_risk (GeoDataFrame): Roads with flood risk data
-            flood_level (int): Flood level to visualize
-            figsize (tuple): Figure size for the plot
+            roads_with_risk: Roads with flood risk data
+            flood_level: Flood level to visualize
+            figsize: Figure size for the plot
         """
         if roads_with_risk is None:
             print("❌ No road risk data available!")
@@ -929,14 +941,20 @@ class RoadNetworkAnalyzer:
         plt.tight_layout()
         plt.show()
     
-    def visualize_combined_elevation_and_roads(self, roads_with_risk, dem_analyzer, flood_level=10, figsize=(8, 5)):
+    def visualize_combined_elevation_and_roads(self, roads_with_risk: gpd.GeoDataFrame, 
+                                             dem_analyzer: ElevationDataAnalyzer, 
+                                             flood_level: int = 10, 
+                                             figsize: Tuple[int, int] = (8, 5)) -> Optional[matplotlib.figure.Figure]:
         """Visualize elevation map with road flood risk overlay.
         
         Args:
-            roads_with_risk (GeoDataFrame): Roads with flood risk data
-            dem_analyzer (ElevationDataAnalyzer): DEM analyzer with elevation data
-            flood_level (int): Flood level to visualize
-            figsize (tuple): Figure size for the plot
+            roads_with_risk: Roads with flood risk data
+            dem_analyzer: DEM analyzer with elevation data
+            flood_level: Flood level to visualize
+            figsize: Figure size for the plot
+            
+        Returns:
+            The matplotlib Figure object, or None if visualization fails
         """
         if roads_with_risk is None or dem_analyzer.elevation_data is None:
             print("❌ Missing road risk data or elevation data!")
