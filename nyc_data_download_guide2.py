@@ -7,7 +7,6 @@ direct API download URLs in the format I specified. Here are the CORRECT
 methods to get the data.
 """
 
-import os
 import webbrowser
 from pathlib import Path
 

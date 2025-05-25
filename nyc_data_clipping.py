@@ -34,7 +34,7 @@ from typing import Tuple, Optional, Union, List, Dict, Any
 
 import geopandas as gpd
 import pandas as pd
-from shapely.geometry import box, Point, Polygon
+from shapely.geometry import box, Polygon
 import matplotlib.pyplot as plt
 import rasterio
 from pathlib import Path
@@ -258,7 +258,7 @@ class GeospatialDataClipper:
             clipped_data: Clipped result data
             title: Title for the clipped data plot
         """
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 7))
+        _, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 7))
         
         # Original data (sample for performance)
         if len(original_data) > 10000:

@@ -39,16 +39,19 @@ import rasterio
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.figure
-import seaborn as sns
 from pathlib import Path
-import pandas as pd
-from collections import Counter
 import geopandas as gpd
-from rasterio.features import rasterize
-from rasterio.transform import from_bounds, Affine
+from rasterio.transform import Affine
 from rasterio.crs import CRS
-from shapely.geometry import Point, LineString
+from shapely.geometry import LineString
 import warnings
+from validation import (
+    validate_dem_file, validate_shapefile, validate_numeric_parameter,
+    validate_output_directory, FileValidationError, DataValidationError,
+    ParameterValidationError
+)
+from logger import get_logger
+from config import config
 warnings.filterwarnings('ignore')
 
 class ElevationDataAnalyzer:
@@ -72,13 +75,20 @@ class ElevationDataAnalyzer:
             dem_path: Path to the DEM raster file
             
         Raises:
-            FileNotFoundError: If the DEM file doesn't exist
+            FileValidationError: If the DEM file doesn't exist or is invalid
+            DataValidationError: If the DEM data is corrupted
         """
-        self.dem_path: Path = Path(dem_path)
-        self.elevation_data: Optional[np.ndarray] = None
-        self.src_info: Optional[Dict[str, Any]] = None
-        self.valid_data: Optional[np.ndarray] = None
-        self.load_data()
+        self.logger = get_logger(self.__class__.__name__)
+        
+        try:
+            self.dem_path: Path = validate_dem_file(dem_path)
+            self.elevation_data: Optional[np.ndarray] = None
+            self.src_info: Optional[Dict[str, Any]] = None
+            self.valid_data: Optional[np.ndarray] = None
+            self.load_data()
+        except (FileValidationError, DataValidationError) as e:
+            self.logger.error(f"Error initializing elevation analyzer: {e}")
+            raise
     
     def load_data(self) -> bool:
         """Load the DEM data and extract metadata.
@@ -89,8 +99,7 @@ class ElevationDataAnalyzer:
         Returns:
             True if data loaded successfully, False otherwise
         """
-        print(f"Loading elevation data from: {self.dem_path.name}")
-        print("=" * 60)
+        self.logger.info(f"Loading elevation data from: {self.dem_path.name}")
         
         try:
             with rasterio.open(self.dem_path) as src:
@@ -108,14 +117,23 @@ class ElevationDataAnalyzer:
                 }
                 
                 # Read elevation data
-                print("Reading elevation data...")
+                self.logger.info("Reading elevation data...")
                 self.elevation_data = src.read(1)
                 
-                print("✅ Data loaded successfully!")
+                # Validate that we actually got data
+                if self.elevation_data is None or self.elevation_data.size == 0:
+                    raise DataValidationError("No elevation data could be read from file")
                 
+                self.logger.info(f"Data loaded successfully! Shape: {self.elevation_data.shape}")
+                
+        except rasterio.RasterioIOError as e:
+            error_msg = f"Cannot open DEM file: {e}"
+            self.logger.error(error_msg)
+            raise DataValidationError(error_msg)
         except Exception as e:
-            print(f"❌ Error loading data: {e}")
-            return False
+            error_msg = f"Unexpected error loading data: {e}"
+            self.logger.error(error_msg)
+            raise DataValidationError(error_msg)
         
         return True
     
@@ -128,6 +146,7 @@ class ElevationDataAnalyzer:
         - Spatial resolution and coverage
         - Estimated real-world area (if CRS is known)
         """
+        self.logger.info("Generating basic dataset information")
         print("\n📊 BASIC DATASET INFORMATION")
         print("-" * 40)
         
@@ -186,6 +205,7 @@ class ElevationDataAnalyzer:
         Returns:
             Dictionary containing statistical measures, or None if no valid data
         """
+        self.logger.info("Computing elevation statistics")
         print("\n🏔️ ELEVATION STATISTICS")
         print("-" * 30)
         
@@ -200,7 +220,9 @@ class ElevationDataAnalyzer:
         self.valid_data = self.valid_data[np.isfinite(self.valid_data)]
         
         if len(self.valid_data) == 0:
-            print("❌ No valid elevation data found!")
+            error_msg = "No valid elevation data found!"
+            self.logger.error(error_msg)
+            print(f"❌ {error_msg}")
             return None
         
         # Basic statistics
@@ -348,11 +370,24 @@ class ElevationDataAnalyzer:
         Returns:
             The matplotlib Figure object, or None if no data available
         """
-        if self.elevation_data is None:
-            print("❌ No elevation data available!")
-            return
+        # Validate inputs
+        try:
+            validated_flood_level = validate_numeric_parameter(
+                flood_level, "Flood level", min_value=-100, max_value=1000
+            )
+        except ParameterValidationError as e:
+            self.logger.error(f"Invalid flood level parameter: {e}")
+            print(f"❌ {e}")
+            return None
         
-        print(f"\n🌊 FLOOD RISK ELEVATION MAP ({flood_level}ft level)")
+        if self.elevation_data is None:
+            error_msg = "No elevation data available!"
+            self.logger.error(error_msg)
+            print(f"❌ {error_msg}")
+            return None
+        
+        self.logger.info(f"Creating flood risk visualization for {validated_flood_level}ft level")
+        print(f"\n🌊 FLOOD RISK ELEVATION MAP ({validated_flood_level}ft level)")
         print("-" * 50)
         
         # Create the plot
@@ -376,8 +411,7 @@ class ElevationDataAnalyzer:
         extent = [bounds.left, bounds.right, bounds.bottom, bounds.top]
         
         # Create flood risk mask
-        flood_mask = elevation_sample <= flood_level
-        safe_mask = elevation_sample > flood_level
+        flood_mask = elevation_sample <= validated_flood_level
         
         # Plot base elevation map
         im_base = ax.imshow(elevation_sample, 
@@ -399,7 +433,7 @@ class ElevationDataAnalyzer:
                             alpha=0.6,
                             origin='upper',
                             vmin=0,
-                            vmax=flood_level)
+                            vmax=validated_flood_level)
         
         # Add elevation colorbar
         cbar_elev = plt.colorbar(im_base, ax=ax, shrink=0.6, pad=0.02, aspect=20)
@@ -407,12 +441,12 @@ class ElevationDataAnalyzer:
         
         # Add flood depth colorbar
         cbar_flood = plt.colorbar(im_flood, ax=ax, shrink=0.6, pad=0.08, aspect=20)
-        cbar_flood.set_label(f'Flood Risk Areas (≤{flood_level}ft)', fontsize=12)
+        cbar_flood.set_label(f'Flood Risk Areas (≤{validated_flood_level}ft)', fontsize=12)
         
         # Calculate flood statistics
         if self.valid_data is not None:
             total_pixels = len(self.valid_data)
-            flooded_pixels = np.sum(self.valid_data <= flood_level)
+            flooded_pixels = np.sum(self.valid_data <= validated_flood_level)
             flood_percentage = flooded_pixels / total_pixels * 100
             
             # Calculate area if coordinate system is known
@@ -432,13 +466,13 @@ class ElevationDataAnalyzer:
             area_text = "No valid data"
         
         # Customize the plot
-        ax.set_title(f'Elevation Map with Flood Risk Zones - {flood_level}ft Water Level', 
+        ax.set_title(f'Elevation Map with Flood Risk Zones - {validated_flood_level}ft Water Level', 
                     fontsize=14, fontweight='bold', pad=20)
         ax.set_xlabel('Longitude', fontsize=12)
         ax.set_ylabel('Latitude', fontsize=12)
         
         # Add flood risk statistics text box
-        stats_text = f'''Flood Risk Summary ({flood_level}ft):
+        stats_text = f'''Flood Risk Summary ({validated_flood_level}ft):
         
 Flooded Area: {flood_percentage:.1f}% of region
 {area_text}
@@ -471,7 +505,23 @@ Legend:
         
         Args:
             water_levels: List of water level thresholds (in feet) to analyze
+            
+        Raises:
+            ParameterValidationError: If water levels are invalid
+            DataValidationError: If no valid data is available
         """
+        # Validate inputs
+        if not water_levels:
+            raise ParameterValidationError("Water levels list cannot be empty")
+        
+        validated_levels = []
+        for level in water_levels:
+            validated_levels.append(
+                validate_numeric_parameter(level, "Water level", min_value=-1000, max_value=10000)
+            )
+        
+        if self.valid_data is None or len(self.valid_data) == 0:
+            raise DataValidationError("No valid elevation data available. Run elevation_statistics() first.")
         print(f"\n🌊 FLOOD RISK ANALYSIS")
         print("-" * 25)
         
@@ -481,7 +531,7 @@ Legend:
         print("(assuming water level = elevation threshold)")
         print()
         
-        for water_level in water_levels:
+        for water_level in validated_levels:
             flooded_pixels = np.sum(self.valid_data <= water_level)
             percentage = flooded_pixels / total_pixels * 100
             
@@ -588,7 +638,7 @@ Legend:
         # self.create_visualizations()
         
         # Flood risk visualization and analysis
-        self.visualize_flood_risk_map(flood_level=10)
+        # self.visualize_flood_risk_map(flood_level=10)
         self.flood_risk_analysis()
         
         # Data quality check
