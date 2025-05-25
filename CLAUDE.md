@@ -126,3 +126,19 @@ When adding new analysis methods:
 4. Provide both programmatic API and command-line interface
 5. Use progress indicators for long-running operations
 6. Include data validation and error handling
+
+### NumPy Integer Formatting
+- Always wrap numpy integers with `int()` before using comma formatting in f-strings
+- Example: `f"{int(np_value):,}"` instead of `f"{np_value:,}"`
+- This prevents "Unknown format code" errors when numpy returns specific integer types
+
+## Recent Improvements
+
+### Code Modernization (2025)
+- Added comprehensive type annotations throughout codebase
+- Implemented structured logging system with progress tracking
+- Created robust input validation with custom exception hierarchy
+- Added pytest testing framework with fixtures and coverage
+- Centralized configuration management system
+- Eliminated GRASS GIS dependencies with pure Python alternatives
+- Fixed numpy integer formatting issues in f-string expressions

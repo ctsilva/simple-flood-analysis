@@ -535,17 +535,17 @@ Legend:
             flooded_pixels = int(np.sum(self.valid_data <= water_level))
             percentage = flooded_pixels / total_pixels * 100
             
-            print(f"Water Level {water_level:4.1f} ft: {flooded_pixels:>8,} pixels ({percentage:>5.1f}% of area)")
+            print(f"Water Level {water_level:4.1f} ft: {int(flooded_pixels):>8,} pixels ({percentage:>5.1f}% of area)")
         
         # Calculate area if we know the coordinate system
         pixel_area = abs(self.src_info['res'][0] * self.src_info['res'][1])
         
         if self.src_info['crs'] and self.src_info['crs'].to_epsg() == 2263:  # NY State Plane (feet)
             print(f"\nPixel area: {pixel_area:.1f} square feet")
-            print(f"Each 1% of area ≈ {total_pixels * pixel_area / 100 / (5280*5280):.2f} square miles")
+            print(f"Each 1% of area ≈ {int(total_pixels) * pixel_area / 100 / (5280*5280):.2f} square miles")
         elif self.src_info['crs'] and self.src_info['crs'].to_epsg() in [32618, 32617]:  # UTM (meters)
             print(f"\nPixel area: {pixel_area:.1f} square meters")
-            print(f"Each 1% of area ≈ {total_pixels * pixel_area / 100 / 1000000:.2f} square kilometers")
+            print(f"Each 1% of area ≈ {int(total_pixels) * pixel_area / 100 / 1000000:.2f} square kilometers")
     
     def data_quality_check(self) -> None:
         """Perform comprehensive data quality assessment.
