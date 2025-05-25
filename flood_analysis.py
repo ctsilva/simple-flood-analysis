@@ -111,7 +111,7 @@ class PythonFloodAnalysis:
         flood_percentage = flooded_pixels / total_pixels * 100
         
         print(f"✅ Flood zones computed")
-        print(f"   Flooded area: {flooded_pixels:,} pixels ({flood_percentage:.1f}%)")
+        print(f"   Flooded area: {int(flooded_pixels):,} pixels ({flood_percentage:.1f}%)")
         print(f"   Max flood depth: {np.max(self.flood_depths):.2f}")
     
     def compute_flow_accumulation(self) -> None:
@@ -441,16 +441,16 @@ class PythonFloodAnalysis:
                 low_risk = (self.roads_gdf['risk_score'] <= 0.4).sum()
                 
                 print(f"\n⚠️  RISK CATEGORIES")
-                print(f"High risk (>0.7): {high_risk:,} segments ({high_risk/len(self.roads_gdf)*100:.1f}%)")
-                print(f"Medium risk (0.4-0.7): {medium_risk:,} segments ({medium_risk/len(self.roads_gdf)*100:.1f}%)")
-                print(f"Low risk (≤0.4): {low_risk:,} segments ({low_risk/len(self.roads_gdf)*100:.1f}%)")
+                print(f"High risk (>0.7): {int(high_risk):,} segments ({high_risk/len(self.roads_gdf)*100:.1f}%)")
+                print(f"Medium risk (0.4-0.7): {int(medium_risk):,} segments ({medium_risk/len(self.roads_gdf)*100:.1f}%)")
+                print(f"Low risk (≤0.4): {int(low_risk):,} segments ({low_risk/len(self.roads_gdf)*100:.1f}%)")
         
         if self.flood_zones is not None:
             flooded_pixels = np.sum(self.flood_zones)
             total_pixels = self.flood_zones.size
             print(f"\n🌊 FLOOD ZONE STATISTICS")
-            print(f"Flooded pixels: {flooded_pixels:,}")
-            print(f"Total pixels: {total_pixels:,}")
+            print(f"Flooded pixels: {int(flooded_pixels):,}")
+            print(f"Total pixels: {int(total_pixels):,}")
             print(f"Flooded area: {flooded_pixels/total_pixels*100:.1f}%")
             
             if self.flood_depths is not None:
