@@ -5,6 +5,9 @@ This script analyzes flood risk for NYC road segments based on elevation data,
 water height, and watershed analysis.
 """
 
+from __future__ import annotations
+from typing import Optional, Union, List, Dict, Any
+
 import os
 import sys
 import numpy as np
@@ -13,6 +16,7 @@ import geopandas as gpd
 import rasterio
 from rasterio.mask import mask
 from rasterio.features import shapes
+from pathlib import Path
 import grass.script as gscript
 from grass.pygrass.modules import Module
 from grass.pygrass.raster import RasterRow
@@ -21,27 +25,27 @@ import warnings
 warnings.filterwarnings('ignore')
 
 class NYCFloodAnalysis:
-    def __init__(self, grass_database_path, location_name="nyc_flood"):
+    def __init__(self, grass_database_path: Union[str, Path], location_name: str = "nyc_flood") -> None:
         """
         Initialize GRASS GIS environment and analysis parameters
         
         Args:
-            grass_database_path (str): Path to GRASS database
-            location_name (str): Name for GRASS location
+            grass_database_path: Path to GRASS database
+            location_name: Name for GRASS location
         """
-        self.grass_db = grass_database_path
-        self.location = location_name
-        self.mapset = "PERMANENT"
+        self.grass_db: str = str(grass_database_path)
+        self.location: str = location_name
+        self.mapset: str = "PERMANENT"
         
         # Ensure GRASS database directory exists
         os.makedirs(grass_database_path, exist_ok=True)
         
-    def setup_grass_environment(self, dem_path):
+    def setup_grass_environment(self, dem_path: Union[str, Path]) -> None:
         """
         Setup GRASS GIS environment and import DEM data
         
         Args:
-            dem_path (str): Path to NYC DEM raster file
+            dem_path: Path to NYC DEM raster file
         """
         print("Setting up GRASS GIS environment...")
         
@@ -52,12 +56,12 @@ class NYCFloodAnalysis:
         # Set region from DEM
         gscript.run_command('g.region', raster='elevation', flags='p')
         
-    def import_elevation_data(self, dem_path):
+    def import_elevation_data(self, dem_path: Union[str, Path]) -> None:
         """
         Import NYC elevation raster data into GRASS
         
         Args:
-            dem_path (str): Path to DEM file (GeoTIFF)
+            dem_path: Path to DEM file (GeoTIFF)
         """
         print("Importing elevation data...")
         
@@ -72,12 +76,12 @@ class NYCFloodAnalysis:
         
         print("Elevation data imported successfully")
     
-    def compute_flood_zones(self, water_height):
+    def compute_flood_zones(self, water_height: float) -> None:
         """
         Compute flood zones based on water height
         
         Args:
-            water_height (float): Water height in meters above sea level
+            water_height: Water height in meters above sea level
         """
         print(f"Computing flood zones for water height: {water_height}m...")
         
@@ -91,12 +95,12 @@ class NYCFloodAnalysis:
         
         print("Flood zones computed")
     
-    def import_road_network(self, roads_path):
+    def import_road_network(self, roads_path: Union[str, Path]) -> None:
         """
         Import NYC road network data
         
         Args:
-            roads_path (str): Path to road network shapefile
+            roads_path: Path to road network shapefile
         """
         print("Importing road network...")
         
